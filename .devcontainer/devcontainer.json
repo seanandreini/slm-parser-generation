@@ -6,7 +6,11 @@
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
   "runArgs": [
     "--gpus",
-    "all"
+    "all",
+    "--log-opt", 
+    "max-size=10m", 
+    "--log-opt", 
+    "max-file=3"
   ],
   "postCreateCommand": "pip install -r requirements.txt",
   "customizations": {
