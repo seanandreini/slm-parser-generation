@@ -4,6 +4,7 @@ from src.prompts import PROMPTS
 from src.ollama_model import STRATEGIES
 from src.ollama_model import generate_solution_pass1
 from src.evaluators import evaluate_json_parser
+from src.monitor import GPUMonitor
 
 def main():
   parser = argparse.ArgumentParser(description="SLM parser generation benchmark")
@@ -17,7 +18,12 @@ def main():
   output_file = os.path.join(args.output_file_path, f"{args.task}_{re.sub(r'[-:]', '_', args.model)}_{args.strategy}.jsonl")
 
   prompt = PROMPTS[args.task]
+
+  monitor = GPUMonitor()
+  monitor.start()
   generation_result = STRATEGIES[args.strategy](model_name=args.model, prompt=prompt)
+  gpu_info = monitor.stop()
+
   eval_result = evaluate_json_parser(solution_code=generation_result['code'])
 
   record = {
@@ -30,10 +36,11 @@ def main():
     "passed": eval_result['passed'],
     "total": eval_result['total'],
     "is_correct": eval_result['is_correct'],
-    "first_error": eval_result['first_error'],
     "prompt_tokens": generation_result['prompt_tokens'],
     "output_tokens": generation_result['output_tokens'],
-    "inference_time": generation_result['time']
+    "inference_time": generation_result['time'],
+    "peak_vram_mb": gpu_info['peak_vram_mb'],
+    "first_error": eval_result['first_error']
   }
 
   output_path = os.path.dirname(output_file)
@@ -47,8 +54,9 @@ def main():
   print(f"passed: {eval_result['passed']}\n")
   print(f"total: {eval_result['total']}\n")
   print(f"output tokens: {generation_result['output_tokens']}\n")
-  print(f"first error: {eval_result['first_error']}\n")
   print(f"inference time: {generation_result['time']}\n")
+  print(f"peak vram (MB): {gpu_info['peak_vram_mb']}\n")
+  print(f"first error: {eval_result['first_error']}\n")
 
 if __name__ == "__main__":
   main()
