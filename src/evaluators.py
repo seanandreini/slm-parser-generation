@@ -1,6 +1,7 @@
 import glob, os, subprocess
 
-def evaluate_json_parser(solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=2.0):
+def evaluate_json_parser(
+    solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=2.0, stop_on_error=False):
   y_files = sorted(glob.glob(os.path.join(test_dir, "y_*.json")))
   n_files = sorted(glob.glob(os.path.join(test_dir, "n_*.json")))
 
@@ -22,36 +23,43 @@ def evaluate_json_parser(solution_code, test_dir="data/benchmarks/JSONTestSuite/
       else:
         if not first_error:
           first_error = f"Failed on valid JSON '{filename}': {result.stderr.strip()}"
+          if stop_on_error:
+            break
 
     except subprocess.TimeoutExpired:
       if not first_error:
         first_error = f"Timeout on '{filename}'"
-  
-  print("evaluating n files...")
-  for file in n_files:
-    filename = os.path.basename(file)
-    with open(file, "rb") as f:
-      raw = f.read()
-      script = f"""
-      {solution_code}
+        if stop_on_error:
+          break
+
+  if not stop_on_error or not first_error:
+    print("evaluating n files...")
+    for file in n_files:
+      filename = os.path.basename(file)
+      with open(file, "rb") as f:
+        raw = f.read()
+        script = f"""
+        {solution_code}
+
+        try:
+          {entry_point}({repr(raw.decode('utf-8', errors='ignore'))})
+          exit(1)
+        except Exception:
+          exit(0)
+        """
 
       try:
-        {entry_point}({repr(raw.decode('utf-8', errors='ignore'))})
-        exit(1)
-      except Exception:
-        exit(0)
-      """
+        result = subprocess.run(['python3', '-c'], input=script, text=True, capture_output=True, timeout=timeout)
+        if result.returncode == 0:
+          passed += 1
+        else:
+          if not first_error:
+            first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
+            if stop_on_error: 
+              break
 
-    try:
-      result = subprocess.run(['python3', '-c'], input=script, text=True, capture_output=True, timeout=timeout)
-      if result.returncode == 0:
-        passed += 1
-      else:
-        if not first_error:
-          first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
-
-    except subprocess.TimeoutExpired:
-      pass
+      except subprocess.TimeoutExpired:
+        pass
 
   return {
     "passed": passed,
