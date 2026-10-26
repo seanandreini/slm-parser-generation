@@ -17,7 +17,7 @@ def evaluate_json_parser(
       script = f"{solution_code}\n\n{entry_point}({repr(raw.decode('utf-8', errors='ignore'))})"
 
     try:
-      result = subprocess.run(['python3', '-c', script], capture_output=True, timeout=timeout)
+      result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
       if result.returncode == 0:
         passed += 1
       else:
@@ -42,14 +42,14 @@ def evaluate_json_parser(
         {solution_code}
 
         try:
-          {entry_point}({repr(raw.decode('utf-8', errors='ignore'))})
+          {entry_point}({repr(raw.decode('utf-8', errors='replace'))})
           exit(1)
         except Exception:
           exit(0)
         """
 
       try:
-        result = subprocess.run(['python3', '-c'], input=script, text=True, capture_output=True, timeout=timeout)
+        result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
         if result.returncode == 0:
           passed += 1
         else:
