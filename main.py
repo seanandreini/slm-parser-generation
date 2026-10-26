@@ -52,7 +52,6 @@ def main():
           "strategy": args.strategy,
           "run": run_id,
           "temperature": args.temperature,
-          "prompt": prompt,
           "accuracy": eval_result['passed']/eval_result['total'] if eval_result['total'] > 0 else 0,
           "passed": eval_result['passed'],
           "total": eval_result['total'],
@@ -65,6 +64,7 @@ def main():
           "peak_vram_mb": gpu_info['peak_vram_mb'],
           **({"max_tries": args.self_debug_max_tries} if args.strategy == "self_debug" else {}),
           "seed": args.seed,
+          "prompt": prompt,
           "solution": generation_result['code'],
           "first_error": eval_result['first_error']
       }

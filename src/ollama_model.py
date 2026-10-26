@@ -65,12 +65,11 @@ def generate_self_debug(prompt, args):
         output_tokens += response.get("eval_count", 0)
         total_time += response.get("eval_duration", 0) / 1e9
 
-        result = evaluate_json_parser(solution_code=code, stop_on_error=True)
-        if (result['is_correct']):
-            break
-        
         i += 1
         if i > args.self_debug_max_tries:
+            break
+        result = evaluate_json_parser(solution_code=code, stop_on_error=True)
+        if (result['is_correct']):
             break
         print(f"the code failed. try n.{i}.")
         prompt = PROMPTS['self_debug'].format(
