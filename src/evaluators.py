@@ -5,7 +5,8 @@ def evaluate_json_parser(
   y_files = sorted(glob.glob(os.path.join(test_dir, "y_*.json")))
   n_files = sorted(glob.glob(os.path.join(test_dir, "n_*.json")))
 
-  passed = 0
+  passed_y = 0
+  passed_n = 0
   total = len(y_files) + len(n_files)
   first_error = None
 
@@ -19,7 +20,7 @@ def evaluate_json_parser(
     try:
       result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
       if result.returncode == 0:
-        passed += 1
+        passed_y += 1
       else:
         if not first_error:
           first_error = f"Failed on valid JSON '{filename}': {result.stderr.strip()}"
@@ -38,20 +39,20 @@ def evaluate_json_parser(
       filename = os.path.basename(file)
       with open(file, "rb") as f:
         raw = f.read()
-        script = f"""
-        {solution_code}
-
-        try:
-          {entry_point}({repr(raw.decode('utf-8', errors='replace'))})
-          exit(1)
-        except Exception:
-          exit(0)
-        """
+        text = raw.decode('utf-8', errors='replace')
+        script = (
+            f"{solution_code}\n\n"
+            f"try:\n"
+            f"    {entry_point}({repr(text)})\n"
+            f"except Exception:\n"
+            f"    raise SystemExit(0)\n"
+            f"raise SystemExit(3)\n"
+        )
 
       try:
         result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
         if result.returncode == 0:
-          passed += 1
+          passed_n += 1
         else:
           if not first_error:
             first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
@@ -62,8 +63,10 @@ def evaluate_json_parser(
         pass
 
   return {
-    "passed": passed,
+    "passed": passed_y + passed_n,
     "total": total,
-    "is_correct": total == passed,
+    "passed_y": passed_y,
+    "passed_n": passed_n,
+    "is_correct": total == passed_y + passed_n,
     "first_error": first_error
   }

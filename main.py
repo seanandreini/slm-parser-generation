@@ -56,6 +56,8 @@ def main():
           "accuracy": eval_result['passed']/eval_result['total'] if eval_result['total'] > 0 else 0,
           "passed": eval_result['passed'],
           "total": eval_result['total'],
+          "passed_y": eval_result['passed_y'],
+          "passed_n": eval_result['passed_n'],
           "is_correct": eval_result['is_correct'],
           "prompt_tokens": generation_result['prompt_tokens'],
           "output_tokens": generation_result['output_tokens'],
