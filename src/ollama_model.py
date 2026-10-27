@@ -76,7 +76,7 @@ def generate_self_debug(prompt, config):
             "passed": result['passed'],
             "total": result['total']
         })
-        if i > config.max_tries:
+        if i >= config.max_tries:
             break
         if (result['is_correct']):
             break

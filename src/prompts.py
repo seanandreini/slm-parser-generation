@@ -9,7 +9,9 @@ Return JUST the Python code inside a ```python block."""
 
 SELF_DEBUG = """The previously generated code failed the test suite.
 Here is the code that failed:
+```python
 {previous_code}
+```
 Here is the error encountered during execution: {error_message}
 Requirements:
 The function 'parse_json(json_str)' takes a string 'json_str' and
@@ -22,7 +24,9 @@ Fix the code above and return JUST the Python code inside a ```python block.
 
 VERIFIER_PROMPT = """
 Specifications: {original_prompt}
-Code: {code}
+Code: ```python
+{previous_code}
+```
 This function should meet the following requirements:
 The function 'parse_json(json_str)' takes a string 'json_str' and
 parses the JSON RFC 8259 without using standard libraries such as 'json' or 'eval'.
@@ -36,7 +40,9 @@ You should NOT return the whole code.
 
 JUDGE_PROMPT = """
 Specifications: {original_prompt}
-Code: {code}
+Code: ```python
+{previous_code}
+```
 Review: {review}
 You are the final judge. A reviewer has reviewed the code above and reported possible bugs. 
 Decide whether the code must be fixed.
@@ -53,7 +59,9 @@ DECISION: reject
 
 SOLVER_PROMPT = """{original_prompt}
 Here is your previous solution:
+```python
 {previous_code}
+```
 
 A reviewer found the following problems:
 {feedback}
