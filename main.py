@@ -4,7 +4,7 @@ import json
 import os
 import re
 
-from src.prompts import PROMPTS
+from src.prompts import MAIN_PROMPTS
 from src.ollama_model import STRATEGIES
 from src.evaluators import evaluate_json_parser
 from src.monitor import GPUMonitor
@@ -20,28 +20,31 @@ def main():
     parser = argparse.ArgumentParser(description="SLM parser generation benchmark")
     parser.add_argument("--model", type=str, default="qwen2.5-coder:3b")
     parser.add_argument("--task", type=str, default="json",
-                        choices=PROMPTS.keys())
+                        choices=MAIN_PROMPTS.keys())
     parser.add_argument("--output_file_path", type=str,
                         default="data/processed")
     parser.add_argument("--temperature", type=float, default=0.2)
     parser.add_argument("--strategy", type=str,
                         default="direct", choices=STRATEGIES.keys())
-    parser.add_argument("--self_debug_max_tries", type=positive_int, default=3)
+    parser.add_argument("--max_tries", type=positive_int, default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--runs", type=positive_int, default=1)
 
     args = parser.parse_args()
 
+    if args.strategy in ("self_debug", "solver_verifier_judge"):
+        args.max_tries = args.max_tries if args.max_tries else 3
+
     output_file = os.path.join(
         args.output_file_path, f"{args.task}_{re.sub(r'[-:]', '_', args.model)}_{args.strategy}.jsonl")
 
-    prompt = PROMPTS[args.task]
+    prompt = MAIN_PROMPTS[args.task]
 
     for run_id in range(1, args.runs+1):
       monitor = GPUMonitor()
       monitor.start()
       print(f"run n.{run_id}")
-      generation_result = STRATEGIES[args.strategy](prompt=prompt, args=args)
+      generation_result, trace = STRATEGIES[args.strategy](prompt=prompt, config=args)
       gpu_info = monitor.stop()
 
       eval_result = evaluate_json_parser(solution_code=generation_result['code'])
@@ -62,11 +65,12 @@ def main():
           "output_tokens": generation_result['output_tokens'],
           "inference_time": generation_result['time'],
           "peak_vram_mb": gpu_info['peak_vram_mb'],
-          **({"max_tries": args.self_debug_max_tries} if args.strategy == "self_debug" else {}),
+          "max_tries": args.max_tries if args.max_tries else 1,
           "seed": args.seed,
           "prompt": prompt,
           "solution": generation_result['code'],
-          "first_error": eval_result['first_error']
+          "first_error": eval_result['first_error'],
+          "trace": trace if trace else None
       }
 
       output_path = os.path.dirname(output_file)

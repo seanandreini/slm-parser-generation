@@ -55,7 +55,10 @@ def evaluate_json_parser(
           passed_n += 1
         else:
           if not first_error:
-            first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
+            if result.returncode == 3:
+              first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
+            else:
+              first_error = f"Code crashed on '{filename}': {result.stderr.strip()}"
             if stop_on_error: 
               break
 
