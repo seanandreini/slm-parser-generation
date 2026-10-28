@@ -36,7 +36,7 @@ def main():
         args.max_tries = args.max_tries if args.max_tries else 3
 
     output_file = os.path.join(
-        args.output_file_path, f"{args.task}_{re.sub(r'[-:]', '_', args.model)}_{args.strategy}.jsonl")
+        args.output_file_path, f"{args.task}_{re.sub(r'[-:.]', '_', args.model)}_{args.strategy}.jsonl")
 
     prompt = MAIN_PROMPTS[args.task]
 

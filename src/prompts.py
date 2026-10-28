@@ -10,7 +10,7 @@ Return JUST the Python code inside a ```python block."""
 SELF_DEBUG = """The previously generated code failed the test suite.
 Here is the code that failed:
 ```python
-{previous_code}
+{code}
 ```
 Here is the error encountered during execution: {error_message}
 Requirements:
@@ -25,7 +25,7 @@ Fix the code above and return JUST the Python code inside a ```python block.
 VERIFIER_PROMPT = """
 Specifications: {original_prompt}
 Code: ```python
-{previous_code}
+{code}
 ```
 This function should meet the following requirements:
 The function 'parse_json(json_str)' takes a string 'json_str' and
@@ -41,16 +41,16 @@ You should NOT return the whole code.
 JUDGE_PROMPT = """
 Specifications: {original_prompt}
 Code: ```python
-{previous_code}
+{code}
 ```
 Review: {review}
-You are the final judge. A reviewer has reviewed the code above and reported possible bugs. 
+You are the final judge. A reviewer has reviewed the code above and reported possible bugs, or it may have said there are no bugs. 
 Decide whether the code must be fixed.
 Do NOT trust the reviewer blindly. For each reported bug check it against the code and the specifications.
 A bug counts only if it goes against the specifications. 
 For each confirmed bug write: input, expected output, actual output, and a short fix.
 If you cannot trace a concrete input that fails, the bug is NOT confirmed.
-If you accept the code, say so. Otherwise, list only the confirmed bugs.
+If you accept the code, say so. Otherwise, list only 3 confirmed bugs.
 
 Reason first, then end with exactly one of these lines:
 DECISION: accept
@@ -60,7 +60,7 @@ DECISION: reject
 SOLVER_PROMPT = """{original_prompt}
 Here is your previous solution:
 ```python
-{previous_code}
+{code}
 ```
 
 A reviewer found the following problems:

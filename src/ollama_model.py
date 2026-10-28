@@ -36,7 +36,7 @@ def generate_solution_pass1(prompt, config):
         "prompt_tokens": response.get("prompt_eval_count", 0),
         "output_tokens": response.get("eval_count", 0),
         "time": response.get("eval_duration", 0) / 1e9
-    }, {}
+    }, []
 
 
 def generate_self_debug(prompt, config):
@@ -53,7 +53,8 @@ def generate_self_debug(prompt, config):
             "options": {
                 "num_predict": 2048,
                 "temperature": config.temperature,
-                "seed": config.seed
+                "seed": config.seed,
+                "repeat_penalty": 1.1
             }
         }
 
@@ -82,11 +83,11 @@ def generate_self_debug(prompt, config):
             break
         print(f"the code failed. try n.{i}.")
         prompt = PROMPTS['self_debug'].format(
-            previous_code=code, 
+            code=code, 
             error_message=result.get('first_error'))
 
-    requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
     
+    requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
     return {
         "code": code,
         "prompt_tokens": prompt_tokens,
@@ -169,12 +170,13 @@ def solver_verifier_judge(prompt, config):
 
       solver_prompt = PROMPTS['solver'].format(
           original_prompt = prompt,
-          previous_code = code,
+          code = code,
           feedback = judge_output
       )
       payload['prompt'] = solver_prompt
-          
 
+      
+    requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
     return {
         "code": code,
         "prompt_tokens": prompt_tokens,
