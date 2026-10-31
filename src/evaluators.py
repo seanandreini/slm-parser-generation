@@ -1,7 +1,7 @@
-import glob, os, subprocess
+import glob, os, subprocess, random
 
 def evaluate_json_parser(
-    solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=2.0, stop_on_error=False):
+    solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=2.0, stop_on_error=False, subset=False):
   y_files = sorted(glob.glob(os.path.join(test_dir, "y_*.json")))
   n_files = sorted(glob.glob(os.path.join(test_dir, "n_*.json")))
 
@@ -9,6 +9,12 @@ def evaluate_json_parser(
   passed_n = 0
   total = len(y_files) + len(n_files)
   first_error = None
+  sign = []
+
+  if subset:
+    rng = random.Random(0)
+    y_files = rng.sample(y_files, max(1, len(y_files) // 10))
+    n_files = rng.sample(n_files, max(1, len(n_files) // 10))
 
   print("evaluating y files...")
   for file in y_files:
@@ -21,13 +27,16 @@ def evaluate_json_parser(
       result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
       if result.returncode == 0:
         passed_y += 1
+        sign.append("pass")
       else:
+        sign.append("fail")
         if not first_error:
           first_error = f"Failed on valid JSON '{filename}': {result.stderr.strip()}"
           if stop_on_error:
             break
 
     except subprocess.TimeoutExpired:
+      sign.append("timeout")
       if not first_error:
         first_error = f"Timeout on '{filename}'"
         if stop_on_error:
@@ -52,8 +61,10 @@ def evaluate_json_parser(
       try:
         result = subprocess.run(['python3', '-'], input=script, text=True, capture_output=True, timeout=timeout)
         if result.returncode == 0:
+          sign.append("pass")
           passed_n += 1
         else:
+          sign.append("fail")
           if not first_error:
             if result.returncode == 3:
               first_error = f"Accepted on invalid JSON '{filename}': {result.stderr.strip()}"
@@ -63,6 +74,7 @@ def evaluate_json_parser(
               break
 
       except subprocess.TimeoutExpired:
+        sign.append("timeout")
         pass
 
   return {
@@ -71,5 +83,6 @@ def evaluate_json_parser(
     "passed_y": passed_y,
     "passed_n": passed_n,
     "is_correct": total == passed_y + passed_n,
+    "sign": sign,
     "first_error": first_error
   }

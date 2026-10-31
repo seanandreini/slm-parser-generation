@@ -7,18 +7,14 @@ Requirements:
 
 Return JUST the Python code inside a ```python block."""
 
-SELF_DEBUG = """The previously generated code failed the test suite.
+SELF_DEBUG = """
+Specifications: {original_prompt}
+The previously generated code failed the test suite.
 Here is the code that failed:
 ```python
 {code}
 ```
 Here is the error encountered during execution: {error_message}
-Requirements:
-The function 'parse_json(json_str)' takes a string 'json_str' and
-parses the JSON RFC 8259 without using standard libraries such as 'json' or 'eval'.
-1. If 'json_str' is a valid JSON, the function must return the corresponding Python structure (dict, list, str, int, float, bool, None).
-2. If 'json_str' contains syntax errors or is malstructured, the function MUST throw an exception (e.g. ValueError or SyntaxError).
-
 Fix the code above and return JUST the Python code inside a ```python block.
 """
 
@@ -27,11 +23,6 @@ Specifications: {original_prompt}
 Code: ```python
 {code}
 ```
-This function should meet the following requirements:
-The function 'parse_json(json_str)' takes a string 'json_str' and
-parses the JSON RFC 8259 without using standard libraries such as 'json' or 'eval'.
-1. If 'json_str' is a valid JSON, the function must return the corresponding Python structure (dict, list, str, int, float, bool, None).
-2. If 'json_str' contains syntax errors or is malstructured, the function MUST throw an exception (e.g. ValueError or SyntaxError).
 
 Report only bugs you can demonstrate with a concrete input. Do not invent issues; if you find none, say so.
 For every bug report an input, the expected result, the actual result, and a short fix.
@@ -71,6 +62,22 @@ listed, and do not rewrite parts of the code that are already correct.
 Return the complete corrected code in a single ```python block, with no explanation.
 """
 
+SOM_AGENT_PROMPT = """
+Specifications: {original_prompt}
+You previously submitted this solution: 
+```python
+{code}
+```
+
+Other agents proposed these solutions to the same task:
+{others}
+
+Review all solutions. Look for bugs or unexpected behaviours. Then write your own solution, keeping your own if you believe
+it is correct, and fixing it if you find a mistake.
+Return only the complete code in a single ```python block.
+"""
+
+
 MAIN_PROMPTS = {
   "json": JSON_PROMPT
 }
@@ -79,5 +86,6 @@ PROMPTS = {
   "self_debug": SELF_DEBUG,
   "verifier": VERIFIER_PROMPT,
   "judge": JUDGE_PROMPT,
-  "solver": SOLVER_PROMPT
+  "solver": SOLVER_PROMPT,
+  "som_agent": SOM_AGENT_PROMPT
 }
