@@ -24,9 +24,10 @@ def main():
     parser.add_argument("--output_file_path", type=str,
                         default="data/processed")
     parser.add_argument("--temperature", type=float, default=0.2)
-    parser.add_argument("--initial_temperature", type=float, default=0.7)
+    parser.add_argument("--initial_temperature", type=float, default=None)
     parser.add_argument("--strategy", type=str,
                         default="direct", choices=STRATEGIES.keys())
+    parser.add_argument("--max_tokens", type=positive_int, default=8192)
     parser.add_argument("--max_tries", type=positive_int, default=None)
     parser.add_argument("--n_agents", type=positive_int, default=None)
     parser.add_argument("--seed", type=int, default=42)
@@ -38,10 +39,11 @@ def main():
         args.max_tries = args.max_tries if args.max_tries else 3
 
     if args.strategy == "society_of_minds":
+        args.inital_temperature = args.initial_temperature if args.initial_temperature else 0.7
         args.n_agents = args.n_agents if args.n_agents else 3
 
     output_file = os.path.join(
-        args.output_file_path, f"{args.task}_{re.sub(r'[-:.]', '_', args.model)}_{args.strategy}.jsonl")
+        args.output_file_path, f"{args.task}_{re.sub(r'[-:./]', '_', args.model)}_{args.strategy}.jsonl")
 
     prompt = MAIN_PROMPTS[args.task]
 
@@ -49,10 +51,12 @@ def main():
       monitor = GPUMonitor()
       monitor.start()
       print(f"run n.{run_id}")
-      generation_result, trace = STRATEGIES[args.strategy](prompt=prompt, config=args)
+      generation_result, trace = STRATEGIES[args.strategy](prompt, args)
       gpu_info = monitor.stop()
 
+      start_time = time.time()
       eval_result = evaluate_json_parser(solution_code=generation_result['code'])
+      evaluation_time = time.time()-start_time
 
       record = {
           "timestamp": time.strftime("%Y-%m-%d %H-%M-%S"),
@@ -68,10 +72,12 @@ def main():
           "passed_n": eval_result['passed_n'],
           "is_correct": eval_result['is_correct'],
           "prompt_tokens": generation_result['prompt_tokens'],
-          "output_tokens": generation_result['output_tokens'],
+          "eval_tokens": generation_result['output_tokens'],
+          "max_tokens_per_generation": args.max_tokens,
           "inference_time": generation_result['inference_time'],
-          "total_time": generation_result['total_time'],
-          "peak_vram_mb": gpu_info['peak_vram_mb'],
+          "total_generation_time": generation_result['total_time'],
+          "evaluation_time": evaluation_time,
+          "peak_vram_mb": gpu_info['peak_vram_mb'] if "openai" not in args.model else None,
           "max_tries": args.max_tries if args.max_tries else 1,
           "seed": args.seed,
           "prompt": prompt,
