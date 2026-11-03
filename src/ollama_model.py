@@ -4,7 +4,6 @@ from openai import OpenAI
 from src.evaluators import evaluate_json_parser
 from src.prompts import PROMPTS
 
-OLLAMA_URL = "http://host.docker.internal:11434/api/generate"
 _groq_client = None
 def get_groq_client():
     global _groq_client
@@ -47,7 +46,7 @@ def call_model(prompt, config, temperature=None, seed=None):
             "seed": config.seed
         }
     }
-    response = requests.post(OLLAMA_URL, json=payload).json()
+    response = requests.post(config.ollama_url, json=payload).json()
     return {
         "response": response.get("response", ""),
         "prompt_tokens": response.get("prompt_eval_count", 0),
@@ -72,7 +71,7 @@ def generate_solution_pass1(prompt, config):
 
     total_time = time.time()-start_time
     if "openai" not in config.model:
-        requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
+        requests.post(config.ollama_url, json={"model": config.model, "keep_alive": 0})
     return {
         "code": code,
         "prompt_tokens": response["prompt_tokens"],
@@ -120,7 +119,7 @@ def generate_self_debug(original_prompt, config):
 
     total_time = time.time()-start_time
     if "openai" not in config.model:
-        requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
+        requests.post(config.ollama_url, json={"model": config.model, "keep_alive": 0})
     return {
         "code": code,
         "prompt_tokens": prompt_tokens,
@@ -197,7 +196,7 @@ def generate_solver_verifier_judge(original_prompt, config):
 
     total_time = time.time()-start_time
     if "openai" not in config.model:
-        requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
+        requests.post(config.ollama_url, json={"model": config.model, "keep_alive": 0})
     return {
         "code": code,
         "prompt_tokens": prompt_tokens,
@@ -273,7 +272,7 @@ def generate_society_of_minds(original_prompt, config):
     total_time = time.time()-start_time
 
     if "openai" not in config.model:
-        requests.post(OLLAMA_URL, json={"model": config.model, "keep_alive": 0})
+        requests.post(config.ollama_url, json={"model": config.model, "keep_alive": 0})
     return {
         "code": solutions[chosen_agent],
         "prompt_tokens": prompt_tokens,

@@ -2,7 +2,8 @@ import argparse
 import time
 import json
 import os
-import re
+import re, yaml
+from types import SimpleNamespace
 
 from src.prompts import MAIN_PROMPTS
 from src.ollama_model import STRATEGIES
@@ -32,26 +33,36 @@ def main():
     parser.add_argument("--n_agents", type=positive_int, default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--runs", type=positive_int, default=1)
+    parser.add_argument("--config", type=str, default="configs/config.yaml")
 
     args = parser.parse_args()
 
-    if args.strategy in ("self_debug", "solver_verifier_judge", "society_of_minds"):
-        args.max_tries = args.max_tries if args.max_tries else 3
+    with open(args.config) as f:
+        cfg = yaml.safe_load(f)
 
-    if args.strategy == "society_of_minds":
-        args.inital_temperature = args.initial_temperature if args.initial_temperature else 0.7
-        args.n_agents = args.n_agents if args.n_agents else 3
+    for key, value in vars(args).items():
+        if key != "config":
+          cfg[key] = value
+
+    config = SimpleNamespace(**cfg)
+
+    if config.strategy in ("self_debug", "solver_verifier_judge", "society_of_minds"):
+        config.max_tries = config.max_tries if config.max_tries else 3
+
+    if config.strategy == "society_of_minds":
+        config.inital_temperature = config.initial_temperature if config.initial_temperature else 0.7
+        config.n_agents = config.n_agents if config.n_agents else 3
 
     output_file = os.path.join(
-        args.output_file_path, f"{args.task}_{re.sub(r'[-:./]', '_', args.model)}_{args.strategy}.jsonl")
+        config.output_file_path, f"{config.task}_{re.sub(r'[-:./]', '_', config.model)}_{config.strategy}.jsonl")
 
-    prompt = MAIN_PROMPTS[args.task]
+    prompt = MAIN_PROMPTS[config.task]
 
-    for run_id in range(1, args.runs+1):
+    for run_id in range(1, config.runs+1):
       monitor = GPUMonitor()
       monitor.start()
       print(f"run n.{run_id}")
-      generation_result, trace = STRATEGIES[args.strategy](prompt, args)
+      generation_result, trace = STRATEGIES[config.strategy](prompt, config)
       gpu_info = monitor.stop()
 
       start_time = time.time()
@@ -60,11 +71,11 @@ def main():
 
       record = {
           "timestamp": time.strftime("%Y-%m-%d %H-%M-%S"),
-          "model": args.model,
-          "strategy": args.strategy,
+          "model": config.model,
+          "strategy": config.strategy,
           "run": run_id,
-          "initial_temperature": args.initial_temperature if args.initial_temperature else args.temperature,
-          "temperature": args.temperature,
+          "initial_temperature": config.initial_temperature if config.initial_temperature else config.temperature,
+          "temperature": config.temperature,
           "accuracy": eval_result['passed']/eval_result['total'] if eval_result['total'] > 0 else 0,
           "passed": eval_result['passed'],
           "total": eval_result['total'],
@@ -73,13 +84,13 @@ def main():
           "is_correct": eval_result['is_correct'],
           "prompt_tokens": generation_result['prompt_tokens'],
           "eval_tokens": generation_result['output_tokens'],
-          "max_tokens_per_generation": args.max_tokens,
+          "max_tokens_per_generation": config.max_tokens,
           "inference_time": generation_result['inference_time'],
           "total_generation_time": generation_result['total_time'],
           "evaluation_time": evaluation_time,
-          "peak_vram_mb": gpu_info['peak_vram_mb'] if "openai" not in args.model else None,
-          "max_tries": args.max_tries if args.max_tries else 1,
-          "seed": args.seed,
+          "peak_vram_mb": gpu_info['peak_vram_mb'] if "openai" not in config.model else None,
+          "max_tries": config.max_tries if config.max_tries else 1,
+          "seed": config.seed,
           "prompt": prompt,
           "solution": generation_result['code'],
           "first_error": eval_result['first_error'],
@@ -100,7 +111,7 @@ def main():
       print(f"total time: {generation_result['total_time']}\n")
       print(f"peak vram (MB): {gpu_info['peak_vram_mb']}\n")
 
-      args.seed += 1
+      config.seed += 1
 
 
 if __name__ == "__main__":
