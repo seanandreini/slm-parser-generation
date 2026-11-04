@@ -25,8 +25,9 @@ def call_model(prompt, config, temperature=None, seed=None):
             model=config.model,
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature,
-            max_completion_tokens=2048,
-            seed=seed
+            max_completion_tokens=config.max_tokens,
+            seed=seed,
+            reasoning_effort="low"
         )
         inference_time = time.time()-start_time
         return {
@@ -43,7 +44,8 @@ def call_model(prompt, config, temperature=None, seed=None):
         "options": {
             "num_predict": config.max_tokens,
             "temperature": config.temperature,
-            "seed": config.seed
+            "seed": config.seed,
+            "num_ctx": config.context_window
         }
     }
     response = requests.post(config.ollama_url, json=payload).json()

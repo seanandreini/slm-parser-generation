@@ -1,1 +1,2 @@
 ollama_url: "http://host.docker.internal:11434/api/generate"
+context_window: 2048
