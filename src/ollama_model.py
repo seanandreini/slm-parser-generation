@@ -62,7 +62,7 @@ def clean_code(code):
     return match.group(1).strip() if match else code.strip()
 
 
-def generate_solution_pass1(prompt, config):
+def generate_single_prompt(prompt, config):
     start_time = time.time()
     
 
@@ -292,7 +292,7 @@ def generate_society_of_minds(original_prompt, config):
 
 
 STRATEGIES = {
-    "direct": generate_solution_pass1,
+    "direct": generate_single_prompt,
     "self_debug": generate_self_debug,
     "solver_verifier_judge": generate_solver_verifier_judge,
     "society_of_minds": generate_society_of_minds
