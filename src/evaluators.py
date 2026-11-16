@@ -1,7 +1,7 @@
 import glob, os, subprocess, random
 
 def evaluate_json_parser(
-    solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=2.0, stop_on_error=False, subset=False):
+    solution_code, test_dir="data/benchmarks/JSONTestSuite/test_parsing", entry_point="parse_json", timeout=1.0, stop_on_error=False, subset=False):
   y_files = sorted(glob.glob(os.path.join(test_dir, "y_*.json")))
   n_files = sorted(glob.glob(os.path.join(test_dir, "n_*.json")))
 
