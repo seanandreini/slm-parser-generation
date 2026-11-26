@@ -50,7 +50,7 @@ def main():
         config.max_tries = config.max_tries if config.max_tries else 3
 
     if config.strategy == "society_of_minds":
-        config.inital_temperature = config.initial_temperature if config.initial_temperature else 0.7
+        config.initial_temperature = config.initial_temperature if config.initial_temperature else 0.7
         config.n_agents = config.n_agents if config.n_agents else 3
 
     output_file = os.path.join(
